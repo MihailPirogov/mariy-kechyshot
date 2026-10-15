@@ -1,0 +1,18 @@
+# build
+build/
+.gradle/
+*.apk
+*.aab
+local.properties
+.idea/
+*.iml
+# secrets
+keystore.properties
+*.jks
+*.keystore
+# private calendar data (not published)
+data/
+calendar-data/
+sources/
+*.xlsx
+*.pdf

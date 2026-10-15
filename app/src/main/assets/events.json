@@ -1,0 +1,36 @@
+[
+ {
+  "id": "hol-example1",
+  "k": "hol",
+  "t": "ПРИМЕР: Пайрем (example holiday)",
+  "t2": "Пример праздника — не реальные данные",
+  "rule": "1 января",
+  "r": "01-01",
+  "s": [
+   "EXAMPLE — sample data"
+  ],
+  "c": "example"
+ },
+ {
+  "id": "pd-example2",
+  "k": "pd",
+  "t": "ПРИМЕР: Кумалтыш (example prayer date)",
+  "rule": "15.06.2030",
+  "d": [
+   "2030-06-15"
+  ],
+  "s": [
+   "EXAMPLE — sample data"
+  ],
+  "c": "example"
+ },
+ {
+  "id": "om-example3",
+  "k": "om",
+  "t": "ПРИМЕР: Тиде примета огыл, тиде тест (example omen, undated)",
+  "c": "example",
+  "s": [
+   "EXAMPLE — sample data"
+  ]
+ }
+]
