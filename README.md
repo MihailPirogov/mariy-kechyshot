@@ -16,7 +16,9 @@
 
 Календарь марийских праздников, молений, народных примет и обрядов на луговомарийском и русском языках. Работает без интернета и по утрам напоминает, что сегодня за день.
 
-**Страница приложения:** https://pirogovlab.ru/mariy-kechyshot/ · **Скачать APK:** [Releases](https://github.com/MihailPirogov/mariy-kechyshot/releases/latest)
+<a href="https://play.google.com/store/apps/details?id=ru.pirogovlab.mariykechyshot"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/ru_badge_web_generic.png" alt="Доступно в Google Play" height="80"></a>
+
+**Google Play:** https://play.google.com/store/apps/details?id=ru.pirogovlab.mariykechyshot · **Страница приложения:** https://pirogovlab.ru/mariy-kechyshot/ · **Скачать APK:** [Releases](https://github.com/MihailPirogov/mariy-kechyshot/releases/latest)
 
 ## Возможности
 - **Таче (сегодня)** — праздники, моления, приметы и дни рождения известных марийцев на любой день; «примета дня».
@@ -60,7 +62,9 @@
 
 **Mariy Kechyshot** is a calendar of traditional Mari holidays, community prayers, folk omens and rites, in Meadow Mari and Russian. Works offline and gives a morning “what's today” summary.
 
-**App page:** https://pirogovlab.ru/en/mariy-kechyshot/ · **Download APK:** [Releases](https://github.com/MihailPirogov/mariy-kechyshot/releases/latest)
+<a href="https://play.google.com/store/apps/details?id=ru.pirogovlab.mariykechyshot"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80"></a>
+
+**Google Play:** https://play.google.com/store/apps/details?id=ru.pirogovlab.mariykechyshot · **App page:** https://pirogovlab.ru/en/mariy-kechyshot/ · **Download APK:** [Releases](https://github.com/MihailPirogov/mariy-kechyshot/releases/latest)
 
 ### Features
 Today view with “omen of the day”, month view with colored dots, holidays with meaning and dates, prayer dates, rites, folk omens, search with filters, reminders, share cards, offline “suggest / report an error” form, light & dark themes.
