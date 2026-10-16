@@ -28,6 +28,6 @@ class PrayersActivity : Activity() {
             if (e.text.isNotBlank()) c.addView(tv(e.text.replace("\n", " ").take(110) + "…", 17f, DARK, false, 2).apply { setPadding(0, dp(8), 0, 0) })
             list.addView(c, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
         }
-        applyFonts(col); setContentView(col)
+        applyFonts(col); setContentView(col); edgeInsets(col)
     }
 }

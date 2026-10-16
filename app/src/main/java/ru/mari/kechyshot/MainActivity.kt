@@ -38,7 +38,7 @@ class MainActivity : Activity() {
         root.addView(prayersRow(), LinearLayout.LayoutParams(-1, -2))
         root.addView(View(this).apply { setBackgroundColor(HAIR) }, LinearLayout.LayoutParams(-1, 1))
         tabs = hbox().apply { setBackgroundColor(SURFACE); setPadding(dp(8), dp(8), dp(8), dp(10)) }; root.addView(tabs)
-        setContentView(root)
+        setContentView(root); edgeInsets(root)
         content.addView(tv("Ямдылалтеш… · Загрузка…", 16f, MUTED).apply { gravity = Gravity.CENTER }, FrameLayout.LayoutParams(-1, -1))
         Ads.init(this)
         Executors.newSingleThreadExecutor().execute {
@@ -70,7 +70,7 @@ class MainActivity : Activity() {
         intent.getStringExtra("shot_open")?.let { startActivity(Intent(this, DetailActivity::class.java).putExtra("id", it).putExtra("date", day.toString())) }
         intent.getStringExtra("shot_share")?.let { id -> Repo.byId[id]?.let { e ->
             val f = Share.card(this, e, day); val bm = android.graphics.BitmapFactory.decodeFile(f.path)
-            setContentView(ScrollView(this).apply { setBackgroundColor(0xFF000000.toInt()); addView(ImageView(context).apply { setImageBitmap(bm); adjustViewBounds = true }) }) } }
+            setContentView(ScrollView(this).also { edgeInsets(it) }.apply { setBackgroundColor(0xFF000000.toInt()); addView(ImageView(context).apply { setImageBitmap(bm); adjustViewBounds = true }) }) } }
         if (intent.getBooleanExtra("shot_prayers", false)) openPrayers()
         if (intent.getBooleanExtra("shot_notify", false)) Reminders.notifyNow(this, day, true)
     }

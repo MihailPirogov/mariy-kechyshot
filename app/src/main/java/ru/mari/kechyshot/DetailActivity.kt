@@ -93,6 +93,6 @@ class DetailActivity : Activity() {
             setOnClickListener { startActivity(android.content.Intent(this@DetailActivity, SuggestActivity::class.java).putExtra("ref_id", e.id).putExtra("ref_title", e.title)) } })
         col.addView(bar)
         applyFonts(col)
-        setContentView(col)
+        setContentView(col); edgeInsets(col)
     }
 }

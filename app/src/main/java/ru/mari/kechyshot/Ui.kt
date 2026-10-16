@@ -107,3 +107,14 @@ fun applyFonts(v: android.view.View) {
     if (v is TextView && v.getTag(R.id.font_set) == null) v.typeface = if (v.typeface?.isBold == true) Fonts.bold else Fonts.regular
     if (v is android.view.ViewGroup) for (i in 0 until v.childCount) applyFonts(v.getChildAt(i))
 }
+
+
+/** Android 15+ enforces edge-to-edge: pad the root so header, tabs, Kumaltysh row and banner stay clear of system bars/cutout/IME. */
+fun edgeInsets(v: android.view.View) {
+    if (android.os.Build.VERSION.SDK_INT < 35) return
+    val l = v.paddingLeft; val tp = v.paddingTop; val r = v.paddingRight; val bt = v.paddingBottom
+    v.setOnApplyWindowInsetsListener { view, ins ->
+        val t = android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.displayCutout() or android.view.WindowInsets.Type.ime()
+        val i = ins.getInsets(t); view.setPadding(l + i.left, tp + i.top, r + i.right, bt + i.bottom); android.view.WindowInsets.CONSUMED }
+    v.requestApplyInsets()
+}
