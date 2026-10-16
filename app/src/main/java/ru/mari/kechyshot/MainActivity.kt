@@ -35,6 +35,8 @@ class MainActivity : Activity() {
         root.addView(OrnamentBand(this))
         content = FrameLayout(this); root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
         root.addView(View(this).apply { setBackgroundColor(HAIR) }, LinearLayout.LayoutParams(-1, 1))
+        root.addView(prayersRow(), LinearLayout.LayoutParams(-1, -2))
+        root.addView(View(this).apply { setBackgroundColor(HAIR) }, LinearLayout.LayoutParams(-1, 1))
         tabs = hbox().apply { setBackgroundColor(SURFACE); setPadding(dp(8), dp(8), dp(8), dp(10)) }; root.addView(tabs)
         setContentView(root)
         content.addView(tv("Ямдылалтеш… · Загрузка…", 16f, MUTED).apply { gravity = Gravity.CENTER }, FrameLayout.LayoutParams(-1, -1))
@@ -46,7 +48,22 @@ class MainActivity : Activity() {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED && !getSharedPreferences("prefs", MODE_PRIVATE).getBoolean("asked_perm", false)) {
             getSharedPreferences("prefs", MODE_PRIVATE).edit().putBoolean("asked_perm", true).apply()
             requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"), 1) }
+        getSharedPreferences("prefs", MODE_PRIVATE).let { if (!it.contains("installed_on")) it.edit().putString("installed_on", java.time.LocalDate.now().toString()).apply() }
         Reminders.schedule(this)
+        Executors.newSingleThreadExecutor().execute { runCatching { Reminders.catchUp(applicationContext) } }
+        if (!BuildConfig.NO_ADS) maybeAskBattery()
+    }
+    /** Samsung & co. defer/kill alarms of battery-optimized apps: ask once to exempt the app. */
+    private fun maybeAskBattery(force: Boolean = false) {
+        val pm = getSystemService(android.os.PowerManager::class.java); val sp = getSharedPreferences("prefs", MODE_PRIVATE)
+        if (pm.isIgnoringBatteryOptimizations(packageName)) { if (force) android.widget.Toast.makeText(this, "Уже разрешено · Уже включено", android.widget.Toast.LENGTH_SHORT).show(); return }
+        if (!force && (sp.getBoolean("asked_batt", false) || !Prefs(this).anyEnabled())) return
+        sp.edit().putBoolean("asked_batt", true).apply()
+        android.app.AlertDialog.Builder(this).setTitle("Ушештарымаш · Напоминания")
+            .setMessage("Чтобы утреннее уведомление приходило вовремя, разрешите приложению работать без ограничений батареи: в открывшемся списке выберите «Марий кечышот» → «Не оптимизировать»." + if (Build.MANUFACTURER.equals("samsung", true)) "\n\nНа Samsung также: Настройки → Обслуживание устройства → Батарея → Ограничения в фоновом режиме — уберите «Марий кечышот» из «Спящих» и «Глубоко спящих» приложений." else "")
+            .setPositiveButton("Разрешить") { _, _ -> runCatching { startActivity(Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
+                .onFailure { runCatching { startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$packageName"))) } } }
+            .setNegativeButton("Позже", null).show()
     }
     /** Screenshot variant only (BuildConfig.NO_ADS): open detail / share card / test notification via intent extras. */
     private fun shotHooks() {
@@ -54,6 +71,7 @@ class MainActivity : Activity() {
         intent.getStringExtra("shot_share")?.let { id -> Repo.byId[id]?.let { e ->
             val f = Share.card(this, e, day); val bm = android.graphics.BitmapFactory.decodeFile(f.path)
             setContentView(ScrollView(this).apply { setBackgroundColor(0xFF000000.toInt()); addView(ImageView(context).apply { setImageBitmap(bm); adjustViewBounds = true }) }) } }
+        if (intent.getBooleanExtra("shot_prayers", false)) openPrayers()
         if (intent.getBooleanExtra("shot_notify", false)) Reminders.notifyNow(this, day, true)
     }
     override fun onSaveInstanceState(o: Bundle) { super.onSaveInstanceState(o); o.putInt("tab", tab) }
@@ -64,7 +82,21 @@ class MainActivity : Activity() {
         val t = vbox().apply { setPadding(dp(12), 0, 0, 0) }
         t.addView(tv("Марий кечышот", 22f, DARK, true))
         t.addView(tv("Марийский календарь", 13f, MUTED))
-        addView(t)
+        addView(t, LinearLayout.LayoutParams(0, -2, 1f))
+        val more = tv("⋮", 26f, DARK, true).apply { gravity = Gravity.CENTER; setPadding(dp(14), dp(2), dp(4), dp(2)); contentDescription = "Меню"
+            setOnClickListener { v -> PopupMenu(this@MainActivity, v).apply {
+                menu.add(0, 1, 0, "Кумалтыш · Молитвы"); menu.add(0, 2, 1, "Ушештарымаш · Напоминания"); menu.add(0, 3, 2, "Пайремым темлаш · Предложить праздник")
+                setOnMenuItemClickListener { when (it.itemId) { 1 -> openPrayers(); 2 -> show(3); else -> startActivity(Intent(this@MainActivity, SuggestActivity::class.java)) }; true }
+            }.show() } }
+        addView(more)
+    }
+    private fun openPrayers() = startActivity(Intent(this, PrayersActivity::class.java))
+    private fun prayersRow(): View = hbox().apply {
+        setBackgroundColor(SURFACE); setPadding(dp(20), dp(11), dp(18), dp(11)); isClickable = true; setOnClickListener { openPrayers() }
+        contentDescription = "Кумалтыш · Молитвы"
+        addView(tv("✦", 13f, RED).apply { setPadding(0, 0, dp(10), 0) })
+        addView(tv("Кумалтыш · Молитвы", 16f, DARK, true), LinearLayout.LayoutParams(0, -2, 1f))
+        addView(tv("›", 22f, RED, true))
     }
 
     private val tabNames = listOf("Таче" to "Сегодня", "Тылзе" to "Месяц", "Кычалаш" to "Поиск", "Ушештарымаш" to "Напоминания")
@@ -119,9 +151,10 @@ class MainActivity : Activity() {
         col.addView(nav)
         if (day != LocalDate.now()) col.addView(tv("↺ Таче · к сегодняшнему дню", 13f, RED, true).apply { gravity = Gravity.CENTER; setPadding(0, dp(4), 0, dp(4)); setOnClickListener { day = LocalDate.now(); show(0) } })
         dayList(day, col)
+        fun bdIndex() = (0 until col.childCount).firstOrNull { (col.getChildAt(it) as? TextView)?.text?.startsWith("ШОЧМО КЕЧЕ") == true } ?: col.childCount
         if (Repo.forDate(day).none { it.kind == "om" }) Repo.omenOfDay(day)?.let { o ->
-            col.addView(sectionTitle("ТАЧЕ ПАЛЕ · ПРИМЕТА ДНЯ (без даты)")); col.addView(eventCard(o, ::open)) }
-        val bdIdx = (0 until col.childCount).firstOrNull { (col.getChildAt(it) as? TextView)?.text?.startsWith("ШОЧМО КЕЧЕ") == true } ?: col.childCount
+            val i = bdIndex(); col.addView(sectionTitle("КЕЧЫН ПАЛЫЖЕ · ПРИМЕТА ДНЯ"), i); col.addView(eventCard(o, ::open), i + 1) }
+        val bdIdx = bdIndex()
         Ads.nativeCard(this, col, bdIdx)
         col.addView(View(this), LinearLayout.LayoutParams(-1, dp(24)))
         return sv
@@ -210,7 +243,7 @@ class MainActivity : Activity() {
         col.addView(Switch(this).apply {
             text = "Эрдене «Таче мо?» · Утренняя сводка «что сегодня» (пайрем, кумалтыш, калык пале, палыме еҥ)"; textSize = 15f; isChecked = p.morning; setPadding(0, dp(10), 0, dp(10))
             setOnCheckedChangeListener { _, c -> p.morning = c; askPerm(); Reminders.schedule(this@MainActivity) } })
-        col.addView(tv("Кушто ушештараш? · О чём ещё напоминать (за N дней)", 13f, MUTED).apply { setPadding(0, dp(8), 0, 0) })
+        col.addView(tv("Мо нерген ушештараш? · О чём ещё напоминать (за N дней)", 13f, MUTED).apply { setPadding(0, dp(8), 0, 0) })
         val cats = listOf("hol" to "Пайрем-влак · праздники", "pd" to "Кумалтыш-влак · моления", "om" to "Калык пале · приметы дня", "bdn" to "Палыме еҥ-влакын шочмо кечышт · дни рождения известных людей", "bd" to "Чыла шочмо кече · все дни рождения")
         for ((k, n) in cats) col.addView(Switch(this).apply {
             text = n; textSize = 15f; isChecked = p.cat(k); setPadding(0, dp(10), 0, dp(10))
@@ -245,6 +278,8 @@ class MainActivity : Activity() {
         col.addView(about, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
         col.addView(Button(this).apply { text = "Тергаш · Проверить уведомление"; setOnClickListener { askPerm(); Reminders.morningSummary(this@MainActivity) } },
             LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(20) })
+        col.addView(Button(this).apply { text = "Батарея · Уведомления без задержек"; setOnClickListener { maybeAskBattery(true) } },
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         return sv
     }
     private fun askPerm() { if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"), 1) }

@@ -74,6 +74,8 @@ object Repo {
         return r.sortedWith(compareBy<Ev>({ order.indexOf(it.kind) }, { if (it.isNotable) 0 else 1 }, { it.title }))
     }
     fun omenOfDay(d: LocalDate): Ev? { val u = all.filter { it.kind == "om" && it.recurring == null }; return if (u.isEmpty()) null else u[Math.floorMod(d.toEpochDay(), u.size.toLong()).toInt()] }
+    fun isPrayer(e: Ev) = e.kind == "rt" && e.category == "моление"
+    fun prayers(): List<Ev> = all.filter { isPrayer(it) }.sortedBy { it.title }
     fun kindsOn(d: LocalDate): Set<String> = forDate(d).map { it.kind }.toSet()
     fun search(q: String, kind: String?): List<Ev> {
         val s = q.trim().lowercase()

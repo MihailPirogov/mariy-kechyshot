@@ -11,7 +11,7 @@ android {
     buildFeatures { buildConfig = true }
     namespace = "ru.mari.kechyshot"
     compileSdk = 34
-    defaultConfig { applicationId = "ru.pirogovlab.mariykechyshot"; minSdk = 26; targetSdk = 34; versionCode = 13; versionName = "1.1.11"; buildConfigField("String", "FEEDBACK_EMAIL", "\"$feedbackEmail\"") }
+    defaultConfig { applicationId = "ru.pirogovlab.mariykechyshot"; minSdk = 26; targetSdk = 34; versionCode = 17; versionName = "1.1.15"; buildConfigField("String", "FEEDBACK_EMAIL", "\"$feedbackEmail\"") }
     signingConfigs { create("release") {
         storeFile = File(keysDir, ks.getProperty("storeFile", "release.jks")).let { if (it.exists()) it else File(ks.getProperty("storeFile", "release.jks")) }; storePassword = ks.getProperty("storePassword"); keyAlias = ks.getProperty("keyAlias"); keyPassword = ks.getProperty("keyPassword") } }
     buildTypes {

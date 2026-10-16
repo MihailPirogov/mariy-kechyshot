@@ -23,7 +23,7 @@ class Prefs(ctx: Context) {
 }
 
 object Reminders {
-    const val CH = "daily"
+    const val CH = "daily2"
     fun schedule(ctx: Context) {
         val p = Prefs(ctx); val am = ctx.getSystemService(AlarmManager::class.java)
         val pi = PendingIntent.getBroadcast(ctx, 0, Intent(ctx, AlarmReceiver::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
@@ -31,7 +31,25 @@ object Reminders {
         if (!p.anyEnabled()) return
         var t = LocalDate.now().atTime(p.hour, p.minute)
         if (!t.isAfter(LocalDateTime.now())) t = t.plusDays(1)
-        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, t.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), pi)
+        val at = t.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val exactOk = android.os.Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()
+        if (exactOk) runCatching { am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi) }.onFailure { am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi) }
+        else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
+        ctx.getSharedPreferences("prefs", Context.MODE_PRIVATE).edit().putLong("next_at", at).apply()
+    }
+    /** If today's reminder time passed and nothing was shown (alarm killed/deferred by the system), show it now. */
+    fun catchUp(ctx: Context) {
+        val p = Prefs(ctx); val sp = ctx.getSharedPreferences("prefs", Context.MODE_PRIVATE)
+        val today = LocalDate.now().toString()
+        if (p.anyEnabled() && sp.getString("last_fired", null) != today && !LocalDate.now().atTime(p.hour, p.minute).isAfter(LocalDateTime.now())
+            && sp.getString("installed_on", today) != today) fire(ctx)
+    }
+    fun fire(ctx: Context) {
+        val p = Prefs(ctx)
+        ctx.getSharedPreferences("prefs", Context.MODE_PRIVATE).edit().putString("last_fired", LocalDate.now().toString()).apply()
+        if (p.morning) morningSummary(ctx)
+        val catsOn = listOf("hol", "pd", "bdn", "bd", "om").any { p.cat(it) } || p.starred().isNotEmpty()
+        if (catsOn && (p.before > 0 || !p.morning)) notifyNow(ctx, LocalDate.now().plusDays(p.before.toLong()))
     }
     fun select(ctx: Context, target: LocalDate): List<Ev> {
         val p = Prefs(ctx); val st = p.starred()
@@ -54,7 +72,8 @@ object Reminders {
     }
     fun post(ctx: Context, nid: Int, whenTxt: String, evs: List<Ev>, target: LocalDate) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(NotificationChannel(CH, "Ушештарымаш · Напоминания", NotificationManager.IMPORTANCE_DEFAULT))
+        nm.deleteNotificationChannel("daily")
+        nm.createNotificationChannel(NotificationChannel(CH, "Ушештарымаш · Напоминания", NotificationManager.IMPORTANCE_HIGH))
         val lines = evs.take(6).map { "• " + (Mari.kindTitle[it.kind] ?: "") + ": " + it.title.take(90) }
         val body = if (lines.isEmpty()) "Тиде кечын ойырымо нимо уке." else lines.joinToString("\n") + if (evs.size > 6) "\n+ ${evs.size - 6}" else ""
         val open = PendingIntent.getActivity(ctx, 1, Intent(ctx, MainActivity::class.java).putExtra("date", target.toString()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
@@ -67,11 +86,7 @@ object Reminders {
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, i: Intent) {
         val r = goAsync()
-        Thread { try { val p = Prefs(ctx)
-            if (p.morning) Reminders.morningSummary(ctx)
-            val catsOn = listOf("hol", "pd", "bdn", "bd", "om").any { p.cat(it) } || p.starred().isNotEmpty()
-            if (catsOn && (p.before > 0 || !p.morning)) Reminders.notifyNow(ctx, LocalDate.now().plusDays(p.before.toLong()))
-            Reminders.schedule(ctx) } finally { r.finish() } }.start()
+        Thread { try { runCatching { Reminders.fire(ctx) }; Reminders.schedule(ctx) } finally { r.finish() } }.start()
     }
 }
-class BootReceiver : BroadcastReceiver() { override fun onReceive(ctx: Context, i: Intent) { if (i.action == Intent.ACTION_BOOT_COMPLETED || i.action == "android.intent.action.MY_PACKAGE_REPLACED") Reminders.schedule(ctx) } }
+class BootReceiver : BroadcastReceiver() { override fun onReceive(ctx: Context, i: Intent) { Reminders.schedule(ctx) } }
