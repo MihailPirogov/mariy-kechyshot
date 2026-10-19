@@ -14,6 +14,20 @@ import java.time.LocalDate
 
 const val APP_URL = "https://pirogovlab.ru/mariy-kechyshot/"
 
+/** Largest power-of-two subsample that keeps the decoded image >= the requested size. */
+fun sampleSize(w: Int, h: Int, reqW: Int, reqH: Int): Int { var s = 1; while (w / (s * 2) >= reqW && h / (s * 2) >= reqH) s *= 2; return s }
+fun decodeResSampled(ctx: Context, res: Int, reqW: Int, reqH: Int): Bitmap {
+    val o = BitmapFactory.Options().apply { inJustDecodeBounds = true; inScaled = false }; BitmapFactory.decodeResource(ctx.resources, res, o)
+    val src = BitmapFactory.decodeResource(ctx.resources, res, BitmapFactory.Options().apply { inScaled = false; inSampleSize = sampleSize(o.outWidth, o.outHeight, reqW, reqH) })
+    if (src.width <= reqW * 2 && src.height <= reqH * 2) return src
+    return Bitmap.createScaledBitmap(src, reqW, reqH, true).also { if (it !== src) src.recycle() }
+}
+fun decodeFileSampled(path: String, reqW: Int): Bitmap? {
+    val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }; BitmapFactory.decodeFile(path, o)
+    if (o.outWidth <= 0) return null
+    return BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sampleSize(o.outWidth, o.outHeight, reqW, 1); inPreferredConfig = Bitmap.Config.RGB_565 })
+}
+
 object Share {
     fun text(e: Ev, d: LocalDate?): String = buildString {
         append("✦ ").append(Mari.kindTitle[e.kind]).append(" ✦\n")
@@ -39,8 +53,8 @@ object Share {
         c.drawColor(PAPER)
         p.color = RED; c.drawRect(0f, 0f, W.toFloat(), 180f, p)
         OrnamentBand.drawBand(c, 0f, 180f, W.toFloat(), 56f, RED, CREAM, DARK, p)
-        val logo = BitmapFactory.decodeResource(ctx.resources, R.drawable.logo)
-        c.drawBitmap(logo, null, RectF(pad, 40f, pad + 110f, 150f), p)
+        val logo = decodeResSampled(ctx, R.drawable.logo, 110, 110)
+        c.drawBitmap(logo, null, RectF(pad, 40f, pad + 110f, 150f), p); logo.recycle()
         val th = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = CREAM; textSize = 56f; typeface = Fonts.serifBold }
         c.drawText("Марий кечышот", pad + 140f, 115f, th)
         var y = 300f
@@ -55,7 +69,7 @@ object Share {
         c.drawText("PirogovLab лабораторийын проектше · pirogovlab.ru", pad, H - 95f, TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = MUTED; textSize = 28f; typeface = Fonts.regular })
         OrnamentBand.drawBand(c, 0f, H - 56f, W.toFloat(), 56f, DARK, CREAM, RED, p)
         val dir = File(ctx.cacheDir, "cards").apply { mkdirs() }
-        val f = File(dir, "card.png"); f.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val f = File(dir, "card.png"); f.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }; bmp.recycle()
         return f
     }
     fun share(ctx: Context, e: Ev, d: LocalDate?) {

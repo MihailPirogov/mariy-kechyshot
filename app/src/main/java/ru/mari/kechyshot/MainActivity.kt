@@ -69,7 +69,7 @@ class MainActivity : Activity() {
     private fun shotHooks() {
         intent.getStringExtra("shot_open")?.let { startActivity(Intent(this, DetailActivity::class.java).putExtra("id", it).putExtra("date", day.toString())) }
         intent.getStringExtra("shot_share")?.let { id -> Repo.byId[id]?.let { e ->
-            val f = Share.card(this, e, day); val bm = android.graphics.BitmapFactory.decodeFile(f.path)
+            val f = Share.card(this, e, day); val bm = decodeFileSampled(f.path, resources.displayMetrics.widthPixels)
             setContentView(ScrollView(this).also { edgeInsets(it) }.apply { setBackgroundColor(0xFF000000.toInt()); addView(ImageView(context).apply { setImageBitmap(bm); adjustViewBounds = true }) }) } }
         if (intent.getBooleanExtra("shot_prayers", false)) openPrayers()
         if (intent.getBooleanExtra("shot_notify", false)) Reminders.notifyNow(this, day, true)

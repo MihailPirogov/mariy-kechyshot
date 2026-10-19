@@ -94,7 +94,7 @@ class SuggestActivity : Activity() {
         f.addView(mail.apply { visibility = android.view.View.GONE; text = "✉ Электрон почто дене · Отправить письмом"
             setOnClickListener { val j = (tag as? JSONObject) ?: payload(); runCatching { startActivity(Feedback.emailIntent(j)) } } })
         f.addView(tv("Тиде формым колтымо годым шке контактдам ончыктымо гын, мемнан вашмутым налын кертыда.\nПоле «Контакт» необязательно; данные используются только для ответа.", 12f, MUTED).apply { setPadding(0, dp(16), 0, 0) })
-        applyFonts(col); setContentView(col)
+        applyFonts(col); setContentView(col); edgeInsets(col)
     }
     private val mail by lazy { Button(this) }
 }
