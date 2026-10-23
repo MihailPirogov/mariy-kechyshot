@@ -125,13 +125,20 @@ class MainActivity : Activity() {
     private fun dayList(d: LocalDate, into: LinearLayout) {
         val evs = Repo.forDate(d)
         if (evs.isEmpty()) { into.addView(tv("Тиде кечын нимо уке.\nНа этот день записей нет.", 15f, MUTED).apply { setPadding(dp(16), dp(24), dp(16), dp(24)) }); return }
+        var secHeader = false
         for ((k, g) in evs.groupBy { it.kind }) {
-            into.addView(sectionTitle((Mari.kindSection[k] ?: k).uppercase() + "  " + g.size))
-            val shown = if (k == "bd") g.filter { it.isNotable }.ifEmpty { g.take(5) } else g
+            val sec = k in Repo.SECONDARY
+            if (sec && !secHeader) { secHeader = true
+                into.addView(View(this).apply { setBackgroundColor(MUTED); alpha = 0.3f }, LinearLayout.LayoutParams(-1, dp(1)).apply { setMargins(dp(16), dp(20), dp(16), dp(2)) })
+                into.addView(tv("МОЛО КАЛЕНДАРЬ-ВЛАК · ДРУГИЕ КАЛЕНДАРИ", 11f, MUTED, true).apply { setPadding(dp(16), dp(6), dp(16), dp(2)) }) }
+            into.addView(if (sec) tv((Mari.kindSection[k] ?: k).uppercase() + "  " + g.size, 11f, Mari.kindColor[k] ?: MUTED, true).apply { setPadding(dp(16), dp(12), dp(16), dp(4)) }
+                else sectionTitle((Mari.kindSection[k] ?: k).uppercase() + "  " + g.size))
+            val lim = when (k) { "ch", "nd" -> 0; "ot", "cn" -> 3; else -> Int.MAX_VALUE }
+            val shown = if (k == "bd") g.filter { it.isNotable }.ifEmpty { g.take(5) } else g.take(lim)
             shown.forEach { into.addView(eventCard(it, ::open)) }
             val rest = g.size - shown.size
             if (rest > 0) {
-                val more = tv("+ $rest эше · ещё $rest", 14f, RED, true).apply { setPadding(dp(18), dp(8), dp(16), dp(8)) }
+                val more = tv(if (shown.isEmpty()) "▸ Ончыкташ · показать ($rest)" else "+ $rest эше · ещё $rest", 14f, if (k in Repo.SECONDARY) (Mari.kindColor[k] ?: RED) else RED, true).apply { setPadding(dp(18), dp(8), dp(16), dp(8)) }
                 more.setOnClickListener { v -> val idx = into.indexOfChild(v); into.removeView(v); g.filter { it !in shown }.forEachIndexed { j, e -> into.addView(eventCard(e, ::open), idx + j) } }
                 into.addView(more)
             }
@@ -182,16 +189,18 @@ class MainActivity : Activity() {
                 background = when { sel -> rounded(RED, 10); today -> rounded(SURFACE, 10, 2, RED); else -> null }
                 addView(tv("$d", 16f, if (sel) CREAM else if (date.dayOfWeek.value >= 6) RED else DARK, kinds.contains("hol")).apply { gravity = Gravity.CENTER })
                 val dots = hbox().apply { gravity = Gravity.CENTER }
-                for (k in listOf("hol", "pd", "om", "bd")) if (k in kinds) dots.addView(View(context).apply { background = rounded(if (sel) CREAM else Mari.kindColor[k]!!, 3) }, LinearLayout.LayoutParams(dp(6), dp(6)).apply { setMargins(dp(1), dp(3), dp(1), 0) })
+                for (k in listOf("hol", "pd", "om", "bd", "ru")) if (k in kinds) dots.addView(View(context).apply { background = rounded(if (sel) CREAM else Mari.kindColor[k]!!, 3) }, LinearLayout.LayoutParams(dp(6), dp(6)).apply { setMargins(dp(1), dp(3), dp(1), 0) })
                 addView(dots)
                 setOnClickListener { day = date; show(1) }
             }
             grid.addView(cell, GridLayout.LayoutParams().apply { width = cw; height = dp(52) })
         }
         col.addView(grid)
-        val legend = hbox().apply { setPadding(dp(16), dp(10), dp(16), 0) }
-        for (k in listOf("hol", "pd", "om", "bd")) { legend.addView(View(this).apply { background = rounded(Mari.kindColor[k]!!, 4) }, LinearLayout.LayoutParams(dp(8), dp(8)).apply { setMargins(0, 0, dp(4), 0) }); legend.addView(tv(Mari.kindTitle[k]!! + "   ", 11f, MUTED)) }
-        col.addView(legend)
+        for (row in listOf(listOf("hol", "pd", "om"), listOf("bd", "ru"))) {
+            val legend = hbox().apply { setPadding(dp(16), if (row[0] == "hol") dp(10) else dp(4), dp(16), 0) }
+            for (k in row) { legend.addView(View(this).apply { background = rounded(Mari.kindColor[k]!!, 4) }, LinearLayout.LayoutParams(dp(8), dp(8)).apply { setMargins(0, 0, dp(4), 0) }); legend.addView(tv((when (k) { "ru" -> "Россий"; else -> Mari.kindTitle[k]!! }) + "   ", 11f, MUTED)) }
+            col.addView(legend)
+        }
         if (day.year == month.year && day.month == month.month) {
             col.addView(tv(Mari.dateFull(day), 17f, DARK, true).apply { setPadding(dp(16), dp(16), dp(16), 0) })
             dayList(day, list); col.addView(list)
@@ -222,7 +231,7 @@ class MainActivity : Activity() {
         }
         fun chipsBuild() {
             chips.removeAllViews()
-            listOf(null to "Чыла", "hol" to "Пайрем", "pd" to "Кумалтыш", "rt" to "Йӱла", "om" to "Калык пале", "bd" to "Шочмо кече").forEach { (k, n) ->
+            listOf(null to "Чыла", "hol" to "Пайрем", "pd" to "Кумалтыш", "rt" to "Йӱла", "om" to "Калык пале", "bd" to "Шочмо кече", "ru" to "Россий", "wd" to "Тӱня", "ot" to "Моло", "cn" to "Вес эл", "fk" to "Калык кечышот", "ch" to "Черке", "nd" to "Лӱм кече").forEach { (k, n) ->
                 chips.addView(chip(n, k?.let { Mari.kindColor[it] } ?: DARK, qKind == k).apply { setOnClickListener { qKind = k; chipsBuild(); run() } },
                     LinearLayout.LayoutParams(-2, -2).apply { setMargins(dp(4), 0, dp(4), 0) })
             }
@@ -244,7 +253,7 @@ class MainActivity : Activity() {
             text = "Эрдене «Таче мо?» · Утренняя сводка «что сегодня» (пайрем, кумалтыш, калык пале, палыме еҥ)"; textSize = 15f; isChecked = p.morning; setPadding(0, dp(10), 0, dp(10))
             setOnCheckedChangeListener { _, c -> p.morning = c; askPerm(); Reminders.schedule(this@MainActivity) } })
         col.addView(tv("Мо нерген ушештараш? · О чём ещё напоминать (за N дней)", 13f, MUTED).apply { setPadding(0, dp(8), 0, 0) })
-        val cats = listOf("hol" to "Пайрем-влак · праздники", "pd" to "Кумалтыш-влак · моления", "om" to "Калык пале · приметы дня", "bdn" to "Палыме еҥ-влакын шочмо кечышт · дни рождения известных людей", "bd" to "Чыла шочмо кече · все дни рождения")
+        val cats = listOf("hol" to "Пайрем-влак · праздники", "pd" to "Кумалтыш-влак · моления", "om" to "Калык пале · приметы дня", "bdn" to "Палыме еҥ-влакын шочмо кечышт · дни рождения известных людей", "bd" to "Чыла шочмо кече · все дни рождения", "ru" to "Россий пайрем-влак · праздники России", "wd" to "Тӱня пайрем-влак · международные дни")
         for ((k, n) in cats) col.addView(Switch(this).apply {
             text = n; textSize = 15f; isChecked = p.cat(k); setPadding(0, dp(10), 0, dp(10))
             setOnCheckedChangeListener { _, c -> p.setCat(k, c); askPerm(); Reminders.schedule(this@MainActivity) }

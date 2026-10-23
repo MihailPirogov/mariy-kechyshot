@@ -19,7 +19,7 @@ class Prefs(ctx: Context) {
     fun starred(): Set<String> = sp.getStringSet("starred", emptySet())!!
     fun isStarred(id: String) = id in starred()
     fun toggleStar(id: String): Boolean { val s = starred().toMutableSet(); val now = if (!s.remove(id)) { s.add(id); true } else false; sp.edit().putStringSet("starred", s).apply(); return now }
-    fun anyEnabled() = morning || listOf("hol", "pd", "bdn", "bd", "om").any { cat(it) } || starred().isNotEmpty()
+    fun anyEnabled() = morning || listOf("hol", "pd", "bdn", "bd", "om", "ru", "wd").any { cat(it) } || starred().isNotEmpty()
 }
 
 object Reminders {
@@ -48,18 +48,18 @@ object Reminders {
         val p = Prefs(ctx)
         ctx.getSharedPreferences("prefs", Context.MODE_PRIVATE).edit().putString("last_fired", LocalDate.now().toString()).apply()
         if (p.morning) morningSummary(ctx)
-        val catsOn = listOf("hol", "pd", "bdn", "bd", "om").any { p.cat(it) } || p.starred().isNotEmpty()
+        val catsOn = listOf("hol", "pd", "bdn", "bd", "om", "ru", "wd").any { p.cat(it) } || p.starred().isNotEmpty()
         if (catsOn && (p.before > 0 || !p.morning)) notifyNow(ctx, LocalDate.now().plusDays(p.before.toLong()))
     }
     fun select(ctx: Context, target: LocalDate): List<Ev> {
         val p = Prefs(ctx); val st = p.starred()
         return Repo.forDate(target).filter { e ->
-            e.id in st || when (e.kind) { "hol" -> p.cat("hol"); "pd" -> p.cat("pd"); "om" -> p.cat("om"); "bd" -> p.cat("bd") || (p.cat("bdn") && e.isNotable); else -> false }
+            e.id in st || when (e.kind) { "hol" -> p.cat("hol"); "pd" -> p.cat("pd"); "om" -> p.cat("om"); "bd" -> p.cat("bd") || (p.cat("bdn") && e.isNotable); "ru" -> p.cat("ru"); "wd" -> p.cat("wd"); else -> false }
         }
     }
     fun morningSummary(ctx: Context) {
         Repo.load(ctx); val d = LocalDate.now()
-        val evs = Repo.forDate(d).filter { it.kind != "bd" || it.isNotable }
+        val p = Prefs(ctx); val evs = Repo.forDate(d).filter { (it.kind != "bd" || it.isNotable) && (it.kind !in Repo.SECONDARY || ((it.kind == "ru" || it.kind == "wd") && p.cat(it.kind))) }
         post(ctx, 7, "Таче · ${Mari.date(d)} · ${Mari.weekdays[d.dayOfWeek.value - 1]}", evs, d)
     }
     fun notifyNow(ctx: Context, target: LocalDate, test: Boolean = false) {

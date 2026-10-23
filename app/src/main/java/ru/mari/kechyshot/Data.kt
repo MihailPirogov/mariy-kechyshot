@@ -23,10 +23,10 @@ object Mari {
     val monthsRuGen = listOf("января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря")
     val weekdays = listOf("Шочмо кече", "Кушкыжмо", "Вӱргече", "Изарня", "Кугарня", "Шуматкече", "Рушарня")
     val wdShort = listOf("Шч", "Кш", "Вр", "Из", "Кг", "Шм", "Рш")
-    val kindTitle = mapOf("hol" to "Пайрем", "pd" to "Кумалтыш", "pr" to "Кумалтыш йӱла", "bd" to "Шочмо кече", "om" to "Калык пале", "rt" to "Йӱла")
-    val kindSection = mapOf("hol" to "Пайрем-влак · Праздники", "pd" to "Кумалтыш-влак · Моления", "pr" to "Кумалтыш йӱла · Виды молений", "bd" to "Шочмо кече-влак · Дни рождения", "om" to "Калык пале-влак · Приметы", "rt" to "Йӱла-влак · Обряды")
-    private val kcLight = mapOf("hol" to 0xFF9E1C1C.toInt(), "pd" to 0xFF6B1F2A.toInt(), "pr" to 0xFF6B1F2A.toInt(), "bd" to 0xFF5A3A2A.toInt(), "om" to 0xFF3A3330.toInt(), "rt" to 0xFF8A5A1E.toInt())
-    private val kcDark = mapOf("hol" to 0xFFE0645C.toInt(), "pd" to 0xFFD08A94.toInt(), "pr" to 0xFFD08A94.toInt(), "bd" to 0xFFC9A086.toInt(), "om" to 0xFFBDB2AA.toInt(), "rt" to 0xFFD9A65E.toInt())
+    val kindTitle = mapOf("hol" to "Пайрем", "ru" to "Россий пайрем", "wd" to "Тӱня пайрем", "ot" to "Моло пайрем", "cn" to "Вес эл", "fk" to "Калык кечышот", "ch" to "Черке", "nd" to "Лӱм кече", "pd" to "Кумалтыш", "pr" to "Кумалтыш йӱла", "bd" to "Шочмо кече", "om" to "Калык пале", "rt" to "Йӱла")
+    val kindSection = mapOf("hol" to "Пайрем-влак · Праздники", "ru" to "Россий пайрем-влак · Праздники России", "wd" to "Тӱня пайрем-влак · Международные дни", "ot" to "Моло пайрем-влак · Необычные и региональные", "cn" to "Вес эл-влак · Праздники других стран", "fk" to "Руш калык кечышот · Народный календарь", "ch" to "Черке кечышот · Церковный календарь", "nd" to "Лӱм кече · Именины", "pd" to "Кумалтыш-влак · Моления", "pr" to "Кумалтыш йӱла · Виды молений", "bd" to "Шочмо кече-влак · Дни рождения", "om" to "Калык пале-влак · Приметы", "rt" to "Йӱла-влак · Обряды")
+    private val kcLight = mapOf("hol" to 0xFF9E1C1C.toInt(), "ru" to 0xFF2C4A7A.toInt(), "wd" to 0xFF2E6B4F.toInt(), "ot" to 0xFF6A4C93.toInt(), "cn" to 0xFF35657A.toInt(), "fk" to 0xFF7A6A2E.toInt(), "ch" to 0xFF5B4636.toInt(), "nd" to 0xFF6E6259.toInt(), "pd" to 0xFF6B1F2A.toInt(), "pr" to 0xFF6B1F2A.toInt(), "bd" to 0xFF5A3A2A.toInt(), "om" to 0xFF3A3330.toInt(), "rt" to 0xFF8A5A1E.toInt())
+    private val kcDark = mapOf("hol" to 0xFFE0645C.toInt(), "ru" to 0xFF8FB0E0.toInt(), "wd" to 0xFF7FC4A0.toInt(), "ot" to 0xFFB9A0DC.toInt(), "cn" to 0xFF8CC0D4.toInt(), "fk" to 0xFFD4C27A.toInt(), "ch" to 0xFFC9AE96.toInt(), "nd" to 0xFFB5A99E.toInt(), "pd" to 0xFFD08A94.toInt(), "pr" to 0xFFD08A94.toInt(), "bd" to 0xFFC9A086.toInt(), "om" to 0xFFBDB2AA.toInt(), "rt" to 0xFFD9A65E.toInt())
     val kindColor: Map<String, Int> get() = if (Palette.night) kcDark else kcLight
     val catMari = mapOf("Писатель/поэт" to "Сылнымутчо", "Композитор/музыкант" to "Композитор, музыкант", "Художник" to "Сӱретче", "Театр/кино" to "Театр, кино",
         "Учёный" to "Шанчызе", "Спорт" to "Спорт", "Герой/военный" to "Сарзе", "Журналист" to "Журналист", "Общественный/гос. деятель" to "Калык пашаеҥ",
@@ -67,7 +67,8 @@ object Repo {
     private fun dl(o: JSONObject, k: String): List<LocalDate> { val a = o.optJSONArray(k) ?: return emptyList(); return (0 until a.length()).map { LocalDate.parse(a.getString(it)) } }
     private fun sl(o: JSONObject, k: String): List<String> { val a = o.optJSONArray(k) ?: return emptyList(); return (0 until a.length()).map { a.getString(it) } }
 
-    private val order = listOf("hol", "pd", "om", "bd", "rt")
+    private val order = listOf("hol", "pd", "om", "rt", "bd", "ru", "wd", "ot", "cn", "fk", "ch", "nd")
+    val SECONDARY = setOf("ru", "wd", "ot", "cn", "fk", "ch", "nd")
     fun forDate(d: LocalDate): List<Ev> {
         val md = "%02d-%02d".format(d.monthValue, d.dayOfMonth)
         val r = (byMd[md].orEmpty() + byDate[d].orEmpty()).distinctBy { it.id }
