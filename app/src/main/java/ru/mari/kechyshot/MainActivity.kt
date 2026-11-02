@@ -16,6 +16,8 @@ import android.widget.*
 import java.time.LocalDate
 import java.util.concurrent.Executors
 
+const val OTHER_DIV = "other_calendars_divider"
+
 class MainActivity : Activity() {
     private lateinit var content: FrameLayout
     private lateinit var tabs: LinearLayout
@@ -124,13 +126,16 @@ class MainActivity : Activity() {
 
     private fun dayList(d: LocalDate, into: LinearLayout) {
         val evs = Repo.forDate(d)
-        if (evs.isEmpty()) { into.addView(tv("Тиде кечын нимо уке.\nНа этот день записей нет.", 15f, MUTED).apply { setPadding(dp(16), dp(24), dp(16), dp(24)) }); return }
+        if (evs.isEmpty()) into.addView(tv("Тиде кечын нимо уке.\nНа этот день записей нет.", 15f, MUTED).apply { setPadding(dp(16), dp(24), dp(16), dp(24)) })
         var secHeader = false
+        // «Другие календари» divider + Sun & Moon card (always shown, below all Mari content)
+        fun otherHeader() { if (secHeader) return; secHeader = true
+            into.addView(View(this).apply { setBackgroundColor(MUTED); alpha = 0.3f; tag = OTHER_DIV }, LinearLayout.LayoutParams(-1, dp(1)).apply { setMargins(dp(16), dp(20), dp(16), dp(2)) })
+            into.addView(tv("МОЛО КАЛЕНДАРЬ-ВЛАК · ДРУГИЕ КАЛЕНДАРИ", 11f, MUTED, true).apply { setPadding(dp(16), dp(6), dp(16), dp(2)) })
+            into.addView(AstroCard.view(this, d) { show(tab) }) }
         for ((k, g) in evs.groupBy { it.kind }) {
             val sec = k in Repo.SECONDARY
-            if (sec && !secHeader) { secHeader = true
-                into.addView(View(this).apply { setBackgroundColor(MUTED); alpha = 0.3f }, LinearLayout.LayoutParams(-1, dp(1)).apply { setMargins(dp(16), dp(20), dp(16), dp(2)) })
-                into.addView(tv("МОЛО КАЛЕНДАРЬ-ВЛАК · ДРУГИЕ КАЛЕНДАРИ", 11f, MUTED, true).apply { setPadding(dp(16), dp(6), dp(16), dp(2)) }) }
+            if (sec) otherHeader()
             into.addView(if (sec) tv((Mari.kindSection[k] ?: k).uppercase() + "  " + g.size, 11f, Mari.kindColor[k] ?: MUTED, true).apply { setPadding(dp(16), dp(12), dp(16), dp(4)) }
                 else sectionTitle((Mari.kindSection[k] ?: k).uppercase() + "  " + g.size))
             val lim = when (k) { "ch", "nd" -> 0; "ot", "cn" -> 3; else -> Int.MAX_VALUE }
@@ -143,6 +148,7 @@ class MainActivity : Activity() {
                 into.addView(more)
             }
         }
+        otherHeader()
     }
 
     private fun todayView(): View {
@@ -158,7 +164,8 @@ class MainActivity : Activity() {
         col.addView(nav)
         if (day != LocalDate.now()) col.addView(tv("↺ Таче · к сегодняшнему дню", 13f, RED, true).apply { gravity = Gravity.CENTER; setPadding(0, dp(4), 0, dp(4)); setOnClickListener { day = LocalDate.now(); show(0) } })
         dayList(day, col)
-        fun bdIndex() = (0 until col.childCount).firstOrNull { (col.getChildAt(it) as? TextView)?.text?.startsWith("ШОЧМО КЕЧЕ") == true } ?: col.childCount
+        // Omen of the day / native ad go before birthdays, and in any case above «Другие календари»
+        fun bdIndex() = (0 until col.childCount).firstOrNull { (col.getChildAt(it) as? TextView)?.text?.startsWith("ШОЧМО КЕЧЕ") == true || col.getChildAt(it).tag == OTHER_DIV } ?: col.childCount
         if (Repo.forDate(day).none { it.kind == "om" }) Repo.omenOfDay(day)?.let { o ->
             val i = bdIndex(); col.addView(sectionTitle("КЕЧЫН ПАЛЫЖЕ · ПРИМЕТА ДНЯ"), i); col.addView(eventCard(o, ::open), i + 1) }
         val bdIdx = bdIndex()
@@ -268,6 +275,11 @@ class MainActivity : Activity() {
         opts.forEach { o -> rg.addView(RadioButton(this).apply { id = 100 + o; text = if (o == 0) "Тиде кечын" else "$o кече"; isChecked = p.before == o; setPadding(0, 0, dp(10), 0) }) }
         rg.setOnCheckedChangeListener { _, id -> p.before = id - 100; Reminders.schedule(this) }
         col.addView(rg)
+        col.addView(sectionTitle("ОЛА · ГОРОД ДЛЯ СОЛНЦА И ЛУНЫ").apply { setPadding(0, dp(16), 0, dp(4)) })
+        val cityBtn = Button(this).apply { text = AstroCard.city(this@MainActivity).name + " ▾"; isAllCaps = false; textSize = 16f }
+        cityBtn.setOnClickListener { AstroCard.pickCity(this) { cityBtn.text = AstroCard.city(this).name + " ▾" } }
+        col.addView(cityBtn, LinearLayout.LayoutParams(-2, -2))
+        col.addView(tv("Восход и закат Солнца и Луны, лунные сутки и смена знака считаются для выбранного города, по его местному времени.", 12f, MUTED))
         col.addView(sectionTitle("ОЙЫРЫМО · ИЗБРАННОЕ ★").apply { setPadding(0, dp(16), 0, dp(4)) })
         val starred = p.starred().mapNotNull { Repo.byId[it] }
         if (starred.isEmpty()) col.addView(tv("Ойырымо уке. Карточкышто ★ темдыза.\nНет избранного — нажмите ★ в карточке события.", 13f, MUTED))

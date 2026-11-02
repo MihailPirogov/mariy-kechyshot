@@ -28,6 +28,7 @@
 - **Йӱла** — порядок марийского моления и семейных обрядов.
 - **Пале (приметы)** — погодные, хозяйственные и бытовые.
 - Поиск с фильтрами, напоминания (утренняя сводка и за 0–7 дней), карточки «поделиться», форма «Предложить праздник / сообщить об ошибке».
+- **Кече да тылзе · Солнце и Луна** — фаза и знак Луны, лунные сутки, восход и закат Солнца и Луны, долгота дня, номер недели; советы для огорода и стрижек «по народной традиции». Считается в приложении, без интернета; город выбирается в настройках.
 - Светлая и тёмная темы; марийские названия месяцев и дней недели.
 
 ## Скриншоты
@@ -67,7 +68,7 @@
 **Google Play:** https://play.google.com/store/apps/details?id=ru.pirogovlab.mariykechyshot · **App page:** https://pirogovlab.ru/en/mariy-kechyshot/ · **Download APK:** [Releases](https://github.com/MihailPirogov/mariy-kechyshot/releases/latest)
 
 ### Features
-Today view with “omen of the day”, month view with colored dots, holidays with meaning and dates, prayer dates, rites, folk omens, search with filters, reminders, share cards, offline “suggest / report an error” form, light & dark themes.
+Today view with “omen of the day”, month view with colored dots, holidays with meaning and dates, prayer dates, rites, folk omens, search with filters, reminders, share cards, offline “suggest / report an error” form, Sun & Moon card (Moon phase and sign, lunar day, sunrise/sunset, moonrise/moonset, day length, week number; computed offline), light & dark themes.
 
 ### Data
 ⚠️ **The full calendar data is not included** (all rights reserved). `app/src/main/assets/events.json` contains three clearly fake sample entries so the project builds. Format: [docs/DATA_SCHEMA.md](docs/DATA_SCHEMA.md).
